@@ -1,14 +1,14 @@
-from flask import Flask, render_template
+from flask import Flask, send_from_directory
+
 app = Flask(__name__)
 
-import requests
-
-response = requests.get(f"http://localhost:4000/blocks")
-blocks = response.json()["blocks"]
-
 @app.route("/")
-def hello():
-    return render_template("home.html", blocks=blocks)
+def base():
+    return send_from_directory("frontend/public", "index.html")
+
+@app.route("/<path:path>")
+def home(path):
+    return send_from_directory("frontend/public", path)
 
 if __name__ == "__main__":
     app.run()
