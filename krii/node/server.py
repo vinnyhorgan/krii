@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from uuid import uuid4
 
-class Node:
+class Server:
     def __init__(self, port, blockchain):
         self.port = port
         self.blockchain = blockchain

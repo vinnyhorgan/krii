@@ -1,18 +1,14 @@
-from kivy.uix.screenmanager import Screen
+from flask import Flask, render_template
+app = Flask(__name__)
 
-from kivymd.app import MDApp
-from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDRectangleFlatButton
+import requests
 
-class App(MDApp):
-    def build(self):
-        screen = Screen()
+response = requests.get(f"http://localhost:4000/blocks")
+blocks = response.json()["blocks"]
 
-        screen.add_widget(
-            MDRectangleFlatButton(
-                text="Hello World",
-                pos_hint={"center_x": 0.5, "center_y": 0.5}
-            )
-        )
+@app.route("/")
+def hello():
+    return render_template("home.html", blocks=blocks)
 
-        return screen
+if __name__ == "__main__":
+    app.run()

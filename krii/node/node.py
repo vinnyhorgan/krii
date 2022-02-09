@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 from blockchain import Blockchain
-from node import Node
+from server import Server
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -11,5 +11,5 @@ if __name__ == "__main__":
 
     blockchain = Blockchain()
 
-    node = Node(port, blockchain)
-    node.run()
+    server = Server(port, blockchain)
+    server.run()
