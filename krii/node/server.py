@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from uuid import uuid4
 
 class Server:
@@ -7,6 +8,7 @@ class Server:
         self.blockchain = blockchain
         self.id = str(uuid4()).replace("-", "")
         self.app = Flask(__name__)
+        CORS(self.app)
 
         @self.app.route("/blocks", methods=["GET"])
         def blocks():
