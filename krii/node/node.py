@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 
 from blockchain import Blockchain
 from server import Server
+from wallet import Wallet
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -10,6 +11,7 @@ if __name__ == "__main__":
     port = args.port
 
     blockchain = Blockchain()
+    wallet = Wallet()
 
-    server = Server(port, blockchain)
-    server.run()
+    #server = Server(port, blockchain)
+    #server.run()

@@ -4,17 +4,35 @@ from time import time
 from urllib.parse import urlparse
 import requests
 
+from config import config
 from db import Db
+import log
 
 class Blockchain:
     def __init__(self):
-        self.pending_transactions = []
-        self.blocks = []
-        self.mining_difficulty = 2
-        self.mining_reward = 100
-        self.nodes = []
+        self.transactions_db = Db("transactions.json")
+        self.blocks_db = Db("blocks.json")
 
-        self.add_genesis()
+        self.transactions = self.transactions_db.read() or []
+        self.blocks = self.blocks_db.read() or []
+
+        self.mining_difficulty = config["mining_difficulty"]
+        self.mining_reward = config["mining_reward"]
+
+        if len(self.blocks) == 0:
+            self.add_genesis()
+            log.info("Created genesis block beacause chain was empty")
+
+    def calculate_transaction_hash(transaction):
+        return hashlib.sha256(f"{transaction['sender']}{transaction['recipient']}{transaction['amount']}{transaction['timestamp']}".encode()).hexdigest()
+
+    def check_transaction(transaction):
+        pass
+
+
+
+
+
 
     def add_genesis(self):
         self.blocks.append({
@@ -25,18 +43,10 @@ class Blockchain:
             "previous_hash": "Genesis"
         })
 
-    def add_node(self, address):
-        url = urlparse(address)
-
-        if url.netloc:
-            self.nodes.append(url.netloc)
-        elif url.path:
-            self.nodes.append(url.path)
-        else:
-            raise ValueError("Invalid URL")
+        self.blocks_db.write(self.blocks)
 
     def add_transaction(self, sender, recipient, amount):
-        self.pending_transactions.append({
+        self.transactions.append({
             "sender": sender,
             "recipient": recipient,
             "amount": amount
@@ -46,12 +56,12 @@ class Blockchain:
         block = {
             "index": len(self.blocks) + 1,
             "timestamp": time(),
-            "transactions": self.pending_transactions,
+            "transactions": self.transactions,
             "proof": proof,
             "previous_hash": self.calculate_hash(self.blocks[-1])
         }
 
-        self.pending_transactions = []
+        self.transactions = []
 
         self.blocks.append(block)
 
@@ -113,21 +123,4 @@ class Blockchain:
 
         return True
 
-    def resolve_conflicts(self):
-        replaced = False
-
-        for node in self.nodes:
-            response = requests.get(f"http://{node}/blocks")
-
-            if response.status_code == 200:
-                chain = response.json()["blocks"]
-
-                if len(chain) > len(self.blocks) and self.valid_chain(chain):
-                    self.blocks = chain
-                    replaced = True
-
         return replaced
-
-    def calculate_hash(self, block):
-        block_string = json.dumps(block, sort_keys=True).encode()
-        return hashlib.sha256(block_string).hexdigest()

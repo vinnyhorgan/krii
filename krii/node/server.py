@@ -6,6 +6,7 @@ class Server:
     def __init__(self, port, blockchain):
         self.port = port
         self.blockchain = blockchain
+        self.nodes = []
         self.id = str(uuid4()).replace("-", "")
         self.app = Flask(__name__)
         CORS(self.app)
@@ -33,7 +34,7 @@ class Server:
         @self.app.route("/transactions", methods=["GET"])
         def transactions():
             response = {
-                "transactions": blockchain.pending_transactions
+                "transactions": blockchain.transactions
             }
 
             return jsonify(response), 200
@@ -87,6 +88,29 @@ class Server:
                 return "Our chain was replaced", 200
             else:
                 return "Our chain is authorative", 200
+
+    def add_node(self, address):
+        url = urlparse(address)
+
+        if url.netloc:
+            self.nodes.append(url.netloc)
+        elif url.path:
+            self.nodes.append(url.path)
+        else:
+            raise ValueError("Invalid URL")
+
+    def resolve_conflicts(self):
+        replaced = False
+
+        for node in self.nodes:
+            response = requests.get(f"http://{node}/blocks")
+
+            if response.status_code == 200:
+                chain = response.json()["blocks"]
+
+                if len(chain) > len(self.blocks) and self.valid_chain(chain):
+                    self.blocks = chain
+                    replaced = True
 
     def run(self):
         self.app.run(host="0.0.0.0", port=self.port)
