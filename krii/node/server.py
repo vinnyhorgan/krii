@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, send_from_directory
 from flask_cors import CORS
 from uuid import uuid4
 
@@ -9,6 +9,18 @@ class Server:
         self.id = str(uuid4()).replace("-", "")
         self.app = Flask(__name__)
         CORS(self.app)
+
+        @self.app.route("/")
+        def base():
+            return redirect("/admin")
+
+        @self.app.route("/admin")
+        def admin():
+            return send_from_directory("admin/public", "index.html")
+
+        @self.app.route("/<path:path>")
+        def home(path):
+            return send_from_directory("admin/public", path)
 
         @self.app.route("/blocks", methods=["GET"])
         def blocks():
