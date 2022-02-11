@@ -11,7 +11,12 @@ if __name__ == "__main__":
     port = args.port
 
     blockchain = Blockchain()
-    wallet = Wallet()
+
+    blockchain.add_transaction("Vinny", "Giorgio", 20)
+
+    print(blockchain.transactions)
+
+    #wallet = Wallet()
 
     #server = Server(port, blockchain)
     #server.run()

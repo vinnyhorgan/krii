@@ -1,4 +1,5 @@
 import json
+import log
 
 class Db:
     def __init__(self, path):
@@ -12,9 +13,10 @@ class Db:
 
             return data
         except:
+            log.warn(f"Could not read {self.path}, it doesn't exist")
             return None
 
     def write(self, data):
         f = open(self.path, "w")
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
         f.close()
