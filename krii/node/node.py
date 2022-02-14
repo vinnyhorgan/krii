@@ -12,11 +12,15 @@ if __name__ == "__main__":
 
     blockchain = Blockchain()
 
-    blockchain.add_transaction("Vinny", "Giorgio", 20)
+    vinny = Wallet()
+    giorgio = Wallet()
+    andrea = Wallet()
 
-    print(blockchain.transactions)
 
-    #wallet = Wallet()
+    # Initial coin distribution
+
+    blockchain.transactions.append(blockchain.new_transaction(None, vinny.public_key, 100))
+    blockchain.mine_pending_transactions(giorgio.public_key)
 
     #server = Server(port, blockchain)
     #server.run()

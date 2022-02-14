@@ -20,10 +20,67 @@ class Blockchain:
         self.mining_reward = config["mining_reward"]
 
         if len(self.blocks) == 0:
-            self.add_genesis()
+            self.blocks.append(self.create_genesis())
+            self.blocks_db.write(self.blocks)
             log.info("Created genesis block beacause chain was empty")
 
-    # TRANSACTIONS (TO TEST)
+    # BLOCKCHAIN
+    def create_genesis(self):
+        genesis = {
+            "previous_hash": "Genesis",
+            "timestamp": time(),
+            "transactions": [],
+            "nonce": 0,
+            "hash": ""
+        }
+
+        return genesis
+
+    def check_chain(self):
+        if self.create_genesis() != self.blocks[0]:
+            return False
+
+        for i in range(1, len(self.blocks)):
+            current_block = self.blocks[i]
+            previous_block = self.blocks[i - 1]
+
+            if previous_block["hash"] != current_block["previous_hash"]:
+                return False
+
+            if not self.check_block(current_block):
+                return False
+
+            if current_block["hash"] != self.calculate_block_hash(current_block):
+                return False
+
+            return True
+
+    def get_balance(self, address):
+        balance = 0
+
+        for block in self.blocks:
+            for transaction in block["transactions"]:
+                if transaction["sender"] == address:
+                    balance -= transaction["amount"]
+
+                if transaction["recipient"] == address:
+                    balance += transaction["amount"]
+
+        log.info(f"Balance of address {address} is: {balance}")
+        return balance
+
+    def mine_pending_transactions(self, reward_address):
+        pending_transactions = self.transactions
+        pending_transactions.append(self.new_transaction(None, reward_address, self.mining_reward))
+
+        block = self.new_block(self.blocks[-1]["hash"], pending_transactions)
+        self.mine_block(block)
+
+        self.blocks.append(block)
+        self.blocks_db.write(self.blocks)
+        self.transactions = []
+
+    # TRANSACTIONS
     def new_transaction(self, sender, recipient, amount):
         new_transaction = {
             "sender": sender,
@@ -37,8 +94,18 @@ class Blockchain:
     def calculate_transaction_hash(self, transaction):
         return hashlib.sha256(f"{transaction['sender']}{transaction['recipient']}{transaction['amount']}{transaction['timestamp']}".encode()).hexdigest()
 
+    def sign_transaction(self, transaction, private_key):
+        if private_key.verifying_key != transaction["sender"]:
+            log.error("Cannot sign transactions for other addresses")
+            return
+
+        #transaction["signature"] = private_key.sign(self.calculate_transaction_hash(transaction))
+
     def check_transaction(self, transaction):
-        if not transaction["signature"]:
+        if transaction["sender"] == None:
+            return True
+
+        if "signature" not in transaction:
             log.warn("No signature in this transaction")
             return False
         if not transaction["sender"].verify(self.calculate_transaction_hash(transaction), transaction["signature"]):
@@ -47,116 +114,58 @@ class Blockchain:
 
         return True
 
-    def sign_transaction(self, transaction, private_key):
-        if private_key.verifying_key.to_string().hex() != transaction["sender"]:
-            log.error("Cannot sign transactions for other addresses")
-            return
-
-        transaction["signature"] = private_key.sign(self.calculate_transaction_hash(transaction))
-
     def add_transaction(self, transaction):
-        if not transaction["sender"] or not transaction["recipient"]:
-            log.error("Transaction must include sender and recipient")
-            return
-        elif transaction["amount"] <= 0:
-            log.error("Transaction amount should be higher than 0")
+        if "sender" not in transaction or "recipient" not in transaction:
+            log.error("Transaction must include a sender and a recipient")
             return
         elif not self.check_transaction(transaction):
             log.error("Cannot add invalid transaction")
             return
+        elif transaction["amount"] <= 0:
+            log.error("Transaction amount should be higher than 0")
+            return
 
+        pending_amount = 0
 
+        for tx in self.transactions:
+            if tx["sender"] == transaction["sender"]:
+                pending_amount += tx["amount"]
 
+        total_balance = self.get_balance(transaction["sender"]) + pending_amount
 
+        if total_balance < transaction["amount"]:
+            log.error("Not enough balance!")
+            return
 
+        self.transactions.append(transaction)
+        log.info("Added transaction!")
 
-
-
-
-
-
-
-
-
-
-
-    def calculate_block_hash(self, block):
-        return hashlib.sha256(f"{block['index']}{block['previous_hash']}{block['timestamp']}{json.dumps(block['transactions'])}{block['nonce']}".encode()).hexdigest()
-
-    def check_block(self, block, previous_block):
-        if previous_block["index"] + 1 != block["index"]:
-            log.error("Error")
-            return False
-        elif previous_block["hash"] != block["previous_hash"]:
-            log.error("Error")
-            return False
-        elif self.calculate_block_hash(block) != block["hash"]:
-            log.error("Error")
-            return False
-        elif block["hash"][:config["mining_difficulty"]] != "0" * config["mining_difficulty"]:
-            log.error("Error")
-            return False
-
-        for transaction in block["transactions"]:
-            if not check_transaction(transaction):
-                log.error("Error")
-                return False
-
-        return True
-
-    def add_block(self, previous_hash):
+    # BLOCKS
+    def new_block(self, previous_hash, transactions):
         new_block = {
-            "index": len(self.blocks) + 1,
             "previous_hash": previous_hash,
             "timestamp": time(),
-            "transactions": self.transactions,
+            "transactions": transactions,
             "nonce": 0,
-            "hash": None
+            "hash": ""
         }
 
-        new_block["hash"] = self.calculate_block_hash(new_block)
+        return new_block
 
-        if self.check_block(new_block, self.blocks[-1]):
-            self.blocks.append(new_block)
-            self.blocks_db.write(self.blocks)
+    def calculate_block_hash(self, block):
+        return hashlib.sha256(f"{block['previous_hash']}{block['timestamp']}{json.dumps(block['transactions'])}{block['nonce']}".encode()).hexdigest()
 
-            self.transactions = []
-            self.transactions_db.write(self.transactions)
-        else:
-            log.error("Invalid block")
+    def mine_block(self, block):
+        while block["hash"][:self.mining_difficulty] != "0" * self.mining_difficulty:
+            block["nonce"] += 1
+            block["hash"] = self.calculate_block_hash(block)
+            log.info(f"Trying hash: {block['hash']}")
 
-    def add_genesis(self):
-        self.blocks.append({
-            "index": 1,
-            "previous_hash": "Genesis",
-            "timestamp": time(),
-            "transactions": [],
-            "nonce": 0
-        })
+        log.info(f"Block mined! Correct hash: {block['hash']}")
 
-        self.blocks_db.write(self.blocks)
-
-    def check_chain(self, chain):
-        for block in chain:
-            if not self.check_block(block, chain.blocks[block["index"] - 1]):
+    def check_block(self, block):
+        for transaction in block["transactions"]:
+            if not self.check_transaction(transaction):
                 return False
 
         return True
-
-    def replace_chain(self, chain):
-        if len(chain) <= len(self.blocks):
-            log.error("Blockchain shorter")
-            return False
-
-        if not self.check_chain(chain):
-            log.error("Blockchain invalid")
-            return False
-
-        self.blocks = chain
-        self.blocks_db.write(self.blocks)
-
-        return True
-
-    def print(self):
-        for block in self.blocks:
-            print(json.dumps(block, indent=4))
