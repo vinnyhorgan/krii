@@ -27,12 +27,15 @@ class Blockchain:
     # BLOCKCHAIN
     def create_genesis(self):
         genesis = {
+            "index": 1,
             "previous_hash": "Genesis",
             "timestamp": time(),
             "transactions": [],
             "nonce": 0,
             "hash": ""
         }
+
+        genesis["hash"] = self.calculate_block_hash(genesis)
 
         return genesis
 
@@ -143,6 +146,7 @@ class Blockchain:
     # BLOCKS
     def new_block(self, previous_hash, transactions):
         new_block = {
+            "index": len(self.blocks) + 1,
             "previous_hash": previous_hash,
             "timestamp": time(),
             "transactions": transactions,

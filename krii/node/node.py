@@ -22,5 +22,5 @@ if __name__ == "__main__":
     blockchain.transactions.append(blockchain.new_transaction(None, vinny.public_key, 100))
     blockchain.mine_pending_transactions(giorgio.public_key)
 
-    #server = Server(port, blockchain)
-    #server.run()
+    server = Server(port, blockchain)
+    server.run()
