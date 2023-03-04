@@ -2,17 +2,18 @@ package core;
 
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import scenes.Test;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.opengl.GL33.*;
 
 public class Window {
     private static Window instance = null;
 
     private int width, height;
     private String title;
-    private long window;
+    private long glfwWindow;
 
     private Window() {
         this.width = 800;
@@ -32,38 +33,72 @@ public class Window {
         init();
         loop();
 
+        SceneManager.unload();
+
         glfwTerminate();
     }
 
-    public void init() {
+    public static int getWidth() {
+        return getInstance().width;
+    }
+
+    public static int getHeight() {
+        return getInstance().height;
+    }
+
+    private void init() {
         GLFWErrorCallback.createPrint(System.err).set();
 
         if (!glfwInit()) {
-            throw new IllegalStateException("Unable to initialize GLFW");
+            throw new IllegalStateException("Error initializing GLFW");
         }
 
         glfwDefaultWindowHints();
 
-        window = glfwCreateWindow(width, height, title, NULL, NULL);
-        if (window == NULL) {
-            throw new RuntimeException("Failed to create the GLFW window");
+        glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+        if (glfwWindow == NULL) {
+            throw new RuntimeException("Error creating GLFW window");
         }
 
-        glfwMakeContextCurrent(window);
+        glfwSetKeyCallback(glfwWindow, Keyboard::keyCallback);
+        glfwSetCursorPosCallback(glfwWindow, Mouse::cursorPosCallback);
+        glfwSetMouseButtonCallback(glfwWindow, Mouse::mouseButtonCallback);
+        glfwSetScrollCallback(glfwWindow, Mouse::scrollCallback);
+        glfwSetFramebufferSizeCallback(glfwWindow, (window, width, height) -> {
+            glViewport(0, 0, width, height);
+            this.width = width;
+            this.height = height;
+        });
+
+        glfwMakeContextCurrent(glfwWindow);
 
         glfwSwapInterval(1);
-    }
 
-    public void loop() {
         GL.createCapabilities();
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        SceneManager.setScene(new Test());
+    }
 
-        while (!glfwWindowShouldClose(window)) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    private void loop() {
+        float beginTime = (float)glfwGetTime();
+        float endTime;
+        float dt = -1.0f;
 
-            glfwSwapBuffers(window);
+        while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents();
+
+            if (dt >= 0) {
+                SceneManager.update(dt);
+            }
+
+            Keyboard.update();
+            Mouse.update();
+
+            glfwSwapBuffers(glfwWindow);
+
+            endTime = (float)glfwGetTime();
+            dt = endTime - beginTime;
+            beginTime = endTime;
         }
     }
 }
