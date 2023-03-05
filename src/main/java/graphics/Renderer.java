@@ -14,6 +14,9 @@ public class Renderer {
     private Matrix4f projectionMatrix;
 
     public Renderer(Shader shader) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         createProjectionMatrix();
         shader.bind();
         shader.setMatrix4("projectionMatrix", projectionMatrix);
@@ -33,17 +36,24 @@ public class Renderer {
         glBindVertexArray(model.getVaoId());
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
 
         Matrix4f transformationMatrix = createTransformationMatrix(entity.getPosition(), entity.getRx(), entity.getRy(), entity.getRz(), entity.getScale());
         shader.setMatrix4("transformationMatrix", transformationMatrix);
 
+        Texture texture = texturedModel.getTexture();
+
+        shader.setFloat("shineDamper", texture.getShineDamper());
+        shader.setFloat("reflectivity", texture.getReflectivity());
+
         glActiveTexture(GL_TEXTURE0);
-        texturedModel.getTexture().bind();
+        texture.bind();
 
         glDrawElements(GL_TRIANGLES, model.getVertexCount(), GL_UNSIGNED_INT, 0);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
         glBindVertexArray(0);
     }
 
