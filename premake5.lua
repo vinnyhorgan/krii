@@ -11,6 +11,20 @@ project "krii"
 
   files { "src/**.c", "tools/krii.rc" }
 
+  includedirs {
+    "vendor/luajit/include",
+  }
+
+  libdirs {
+    "vendor/luajit/lib",
+  }
+
+  links { "lua51" }
+
+  postbuildcommands {
+    "{COPYFILE} ../vendor/luajit/lib/lua51.dll %{cfg.targetdir}",
+  }
+
   filter "configurations:debug"
     defines { "DEBUG" }
     symbols "On"
