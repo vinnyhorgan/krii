@@ -13,16 +13,20 @@ project "krii"
 
   includedirs {
     "vendor/luajit/include",
+    "vendor/uv/include"
   }
 
   libdirs {
     "vendor/luajit/lib",
+    "vendor/uv/lib"
   }
 
-  links { "lua51" }
+  links { "lua51", "uv" }
 
   postbuildcommands {
+    "{COPYDIR} ../data %{cfg.targetdir}/data",
     "{COPYFILE} ../vendor/luajit/lib/lua51.dll %{cfg.targetdir}",
+    "{COPYFILE} ../vendor/uv/lib/uv.dll %{cfg.targetdir}",
   }
 
   filter "configurations:debug"
