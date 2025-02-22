@@ -3,6 +3,8 @@ workspace "krii"
   architecture "x64"
   location "build"
 
+  include "vendor/lpeg"
+
 project "krii"
   kind "ConsoleApp"
   language "C"
@@ -27,6 +29,7 @@ project "krii"
   }
 
   links {
+    "lpeg",
     "lua51",
     "uv"
   }

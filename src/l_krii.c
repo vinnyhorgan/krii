@@ -3,6 +3,7 @@
 #include <lutf8lib.h>
 
 static const luaL_Reg modules[] = {
+  { "lpeg", luaopen_lpeg },
   { "utf8", luaopen_utf8 },
   { NULL, NULL },
 };
