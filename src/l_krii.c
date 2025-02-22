@@ -1,6 +1,9 @@
 #include "api.h"
 
+#include <lutf8lib.h>
+
 static const luaL_Reg modules[] = {
+  { "utf8", luaopen_utf8 },
   { NULL, NULL },
 };
 

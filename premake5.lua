@@ -9,10 +9,15 @@ project "krii"
   targetdir "build/bin/%{cfg.buildcfg}"
   objdir "build/obj/%{cfg.buildcfg}"
 
-  files { "src/**.c", "tools/krii.rc" }
+  files {
+    "src/**.c",
+    "vendor/luax/lutf8lib.c",
+    "tools/krii.rc"
+  }
 
   includedirs {
     "vendor/luajit/include",
+    "vendor/luax",
     "vendor/uv/include"
   }
 
@@ -21,7 +26,10 @@ project "krii"
     "vendor/uv/lib"
   }
 
-  links { "lua51", "uv" }
+  links {
+    "lua51",
+    "uv"
+  }
 
   postbuildcommands {
     "{COPYDIR} ../data %{cfg.targetdir}/data",
