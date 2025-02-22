@@ -14,7 +14,9 @@ project "lpeg"
     buildoptions { "/wd4005", "/wd4244", "/wd4267" }
 
   filter "configurations:debug"
+    defines { "LPEG_DEBUG" }
     symbols "On"
 
   filter "configurations:release"
+    defines { "NDEBUG" }
     optimize "On"
