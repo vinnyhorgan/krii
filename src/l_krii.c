@@ -3,7 +3,8 @@
 #include <lutf8lib.h>
 
 static const luaL_Reg modules[] = {
-  { "cjson", luaopen_cjson },
+  { "krii.uv", luaopen_krii_uv },
+  { "cjson", luaopen_cjson_safe },
   { "lpeg", luaopen_lpeg },
   { "utf8", luaopen_utf8 },
   { NULL, NULL },
