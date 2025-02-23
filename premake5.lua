@@ -3,6 +3,7 @@ workspace "krii"
   architecture "x64"
   location "build"
 
+  include "vendor/cjson"
   include "vendor/lpeg"
 
 project "krii"
@@ -29,6 +30,7 @@ project "krii"
   }
 
   links {
+    "cjson",
     "lpeg",
     "lua51",
     "uv"
